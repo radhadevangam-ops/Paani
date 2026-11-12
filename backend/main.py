@@ -1,6 +1,7 @@
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from datetime import datetime
 import sqlite3
 
 app = FastAPI(
@@ -9,15 +10,34 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Create the database and localities table
-def create_database():
+
+# Database connection
+def get_connection():
     connection = sqlite3.connect("paani.db")
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+# Create database tables
+def create_database():
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS localities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            locality_id INTEGER NOT NULL,
+            actual_arrival TEXT NOT NULL,
+            duration_minutes INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            FOREIGN KEY (locality_id) REFERENCES localities(id)
         )
     """)
 
@@ -28,11 +48,19 @@ def create_database():
 create_database()
 
 
-# Data format for a new locality
+# Request formats
 class Locality(BaseModel):
     name: str
 
 
+class SupplyReport(BaseModel):
+    locality_id: int
+    actual_arrival: datetime
+    duration_minutes: int = Field(gt=0)
+    source: str = "resident"
+
+
+# Home endpoint
 @app.get("/")
 def home():
     return {
@@ -41,10 +69,39 @@ def home():
     }
 
 
+# Add a locality
+@app.post("/localities")
+def add_locality(locality: Locality):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "INSERT INTO localities (name) VALUES (?)",
+            (locality.name.strip(),)
+        )
+        connection.commit()
+
+        return {
+            "message": "Locality added successfully",
+            "id": cursor.lastrowid,
+            "name": locality.name.strip()
+        }
+
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="This locality already exists"
+        )
+
+    finally:
+        connection.close()
+
+
 # Retrieve all localities
 @app.get("/localities")
 def get_localities():
-    connection = sqlite3.connect("paani.db")
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("SELECT id, name FROM localities")
@@ -58,29 +115,118 @@ def get_localities():
     ]
 
 
-# Add a new locality
-@app.post("/localities")
-def add_locality(locality: Locality):
-    connection = sqlite3.connect("paani.db")
+# Add a water-supply report
+@app.post("/reports")
+def add_report(report: SupplyReport):
+    connection = get_connection()
     cursor = connection.cursor()
 
-    try:
-        cursor.execute(
-            "INSERT INTO localities (name) VALUES (?)",
-            (locality.name.strip(),)
-        )
-        connection.commit()
+    cursor.execute(
+        "SELECT id FROM localities WHERE id = ?",
+        (report.locality_id,)
+    )
 
-        new_id = cursor.lastrowid
-
-        return {
-            "message": "Locality added successfully",
-            "id": new_id,
-            "name": locality.name.strip()
-        }
-
-    except sqlite3.IntegrityError:
-        return {"error": "This locality already exists"}
-
-    finally:
+    if cursor.fetchone() is None:
         connection.close()
+        raise HTTPException(
+            status_code=404,
+            detail="Locality not found"
+        )
+
+    cursor.execute("""
+        INSERT INTO reports (
+            locality_id,
+            actual_arrival,
+            duration_minutes,
+            source
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        report.locality_id,
+        report.actual_arrival.isoformat(),
+        report.duration_minutes,
+        report.source
+    ))
+
+    connection.commit()
+    report_id = cursor.lastrowid
+    connection.close()
+
+    return {
+        "message": "Water-supply report saved successfully",
+        "report_id": report_id,
+        "locality_id": report.locality_id
+    }
+
+
+# Retrieve all reports
+@app.get("/reports")
+def get_reports():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            reports.id,
+            localities.name,
+            reports.actual_arrival,
+            reports.duration_minutes,
+            reports.source
+        FROM reports
+        JOIN localities
+        ON reports.locality_id = localities.id
+        ORDER BY reports.id DESC
+    """)
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [
+        {
+            "id": row[0],
+            "locality": row[1],
+            "actual_arrival": row[2],
+            "duration_minutes": row[3],
+            "source": row[4]
+        }
+        for row in rows
+    ]
+
+
+# Retrieve reports for one locality
+@app.get("/localities/{locality_id}/reports")
+def get_locality_reports(locality_id: int):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT id FROM localities WHERE id = ?",
+        (locality_id,)
+    )
+
+    if cursor.fetchone() is None:
+        connection.close()
+        raise HTTPException(
+            status_code=404,
+            detail="Locality not found"
+        )
+
+    cursor.execute("""
+        SELECT id, actual_arrival, duration_minutes, source
+        FROM reports
+        WHERE locality_id = ?
+        ORDER BY id DESC
+    """, (locality_id,))
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [
+        {
+            "id": row[0],
+            "actual_arrival": row[1],
+            "duration_minutes": row[2],
+            "source": row[3]
+        }
+        for row in rows
+    ]
