@@ -1,12 +1,212 @@
 
-# Predict the next water arrival
-@app.get("/localities/{locality_id}/prediction")
-def predict_next_arrival(locality_id: int):
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
+import sqlite3
+
+app = FastAPI(
+    title="Paani API",
+    description="Water supply monitoring and prediction platform",
+    version="1.0.0"
+)
+
+
+# Database connection
+def get_connection():
+    connection = sqlite3.connect("paani.db")
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+# Create database tables
+def create_database():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS localities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            locality_id INTEGER NOT NULL,
+            actual_arrival TEXT NOT NULL,
+            duration_minutes INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            FOREIGN KEY (locality_id) REFERENCES localities(id)
+        )
+    """)
+
+    connection.commit()
+    connection.close()
+
+
+create_database()
+
+
+# Request formats
+class Locality(BaseModel):
+    name: str
+
+
+class SupplyReport(BaseModel):
+    locality_id: int
+    actual_arrival: datetime
+    duration_minutes: int = Field(gt=0)
+    source: str = "resident"
+
+
+# Home endpoint
+@app.get("/")
+def home():
+    return {
+        "message": "Welcome to Paani!",
+        "status": "running"
+    }
+
+
+# Add a locality
+@app.post("/localities")
+def add_locality(locality: Locality):
+    name = locality.name.strip()
+
+    if not name:
+        raise HTTPException(
+            status_code=422,
+            detail="Locality name cannot be empty"
+        )
 
     connection = get_connection()
     cursor = connection.cursor()
 
-    # Check whether locality exists
+    try:
+        cursor.execute(
+            "INSERT INTO localities (name) VALUES (?)",
+            (name,)
+        )
+        connection.commit()
+
+        return {
+            "message": "Locality added successfully",
+            "id": cursor.lastrowid,
+            "name": name
+        }
+
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="This locality already exists"
+        )
+
+    finally:
+        connection.close()
+
+
+# Retrieve all localities
+@app.get("/localities")
+def get_localities():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT id, name FROM localities")
+    rows = cursor.fetchall()
+
+    connection.close()
+
+    return [
+        {"id": row[0], "name": row[1]}
+        for row in rows
+    ]
+
+
+# Add a water-supply report
+@app.post("/reports")
+def add_report(report: SupplyReport):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT id FROM localities WHERE id = ?",
+        (report.locality_id,)
+    )
+
+    if cursor.fetchone() is None:
+        connection.close()
+        raise HTTPException(
+            status_code=404,
+            detail="Locality not found"
+        )
+
+    cursor.execute("""
+        INSERT INTO reports (
+            locality_id,
+            actual_arrival,
+            duration_minutes,
+            source
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        report.locality_id,
+        report.actual_arrival.isoformat(),
+        report.duration_minutes,
+        report.source
+    ))
+
+    connection.commit()
+    report_id = cursor.lastrowid
+    connection.close()
+
+    return {
+        "message": "Water-supply report saved successfully",
+        "report_id": report_id,
+        "locality_id": report.locality_id
+    }
+
+
+# Retrieve all reports
+@app.get("/reports")
+def get_reports():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            reports.id,
+            localities.name,
+            reports.actual_arrival,
+            reports.duration_minutes,
+            reports.source
+        FROM reports
+        JOIN localities
+        ON reports.locality_id = localities.id
+        ORDER BY reports.id DESC
+    """)
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [
+        {
+            "id": row[0],
+            "locality": row[1],
+            "actual_arrival": row[2],
+            "duration_minutes": row[3],
+            "source": row[4]
+        }
+        for row in rows
+    ]
+
+
+# Retrieve reports for one locality
+@app.get("/localities/{locality_id}/reports")
+def get_locality_reports(locality_id: int):
+    connection = get_connection()
+    cursor = connection.cursor()
+
     cursor.execute(
         "SELECT id FROM localities WHERE id = ?",
         (locality_id,)
@@ -19,7 +219,46 @@ def predict_next_arrival(locality_id: int):
             detail="Locality not found"
         )
 
-    # Retrieve historical arrival times
+    cursor.execute("""
+        SELECT id, actual_arrival, duration_minutes, source
+        FROM reports
+        WHERE locality_id = ?
+        ORDER BY id DESC
+    """, (locality_id,))
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [
+        {
+            "id": row[0],
+            "actual_arrival": row[1],
+            "duration_minutes": row[2],
+            "source": row[3]
+        }
+        for row in rows
+    ]
+
+
+# Improved water-arrival prediction
+@app.get("/localities/{locality_id}/prediction")
+def predict_next_arrival(locality_id: int):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT id FROM localities WHERE id = ?",
+        (locality_id,)
+    )
+
+    if cursor.fetchone() is None:
+        connection.close()
+        raise HTTPException(
+            status_code=404,
+            detail="Locality not found"
+        )
+
     cursor.execute("""
         SELECT actual_arrival
         FROM reports
@@ -36,13 +275,11 @@ def predict_next_arrival(locality_id: int):
             detail="At least two observations are required"
         )
 
-    # Convert timestamps
     arrivals = [
         datetime.fromisoformat(row[0])
         for row in rows
     ]
 
-    # Calculate intervals between consecutive arrivals
     intervals = []
 
     for i in range(1, len(arrivals)):
@@ -59,7 +296,6 @@ def predict_next_arrival(locality_id: int):
             detail="No valid arrival intervals found"
         )
 
-    # Calculate average and median intervals
     sorted_intervals = sorted(intervals)
 
     average_hours = sum(intervals) / len(intervals)
@@ -74,7 +310,6 @@ def predict_next_arrival(locality_id: int):
     else:
         median_hours = sorted_intervals[middle]
 
-    # Calculate interval variability
     variance = sum(
         (value - average_hours) ** 2
         for value in intervals
@@ -87,7 +322,6 @@ def predict_next_arrival(locality_id: int):
         if average_hours > 0 else 0
     )
 
-    # Assess data reliability
     if len(arrivals) >= 20 and variability_percent <= 10:
         reliability = "high"
     elif len(arrivals) >= 10 and variability_percent <= 20:
@@ -95,12 +329,10 @@ def predict_next_arrival(locality_id: int):
     else:
         reliability = "low"
 
-    # Predict the next arrival using the median
     latest_arrival = arrivals[-1]
 
     predicted_arrival = (
-        latest_arrival
-        + timedelta(hours=median_hours)
+        latest_arrival + timedelta(hours=median_hours)
     )
 
     return {
