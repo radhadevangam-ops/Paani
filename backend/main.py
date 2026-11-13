@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 
 app = FastAPI(
@@ -230,3 +230,80 @@ def get_locality_reports(locality_id: int):
         }
         for row in rows
     ]
+
+
+# Predict the next water arrival
+@app.get("/localities/{locality_id}/prediction")
+def predict_next_arrival(locality_id: int):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    # Check whether locality exists
+    cursor.execute(
+        "SELECT id FROM localities WHERE id = ?",
+        (locality_id,)
+    )
+
+    if cursor.fetchone() is None:
+        connection.close()
+        raise HTTPException(
+            status_code=404,
+            detail="Locality not found"
+        )
+
+    # Retrieve historical arrival times
+    cursor.execute("""
+        SELECT actual_arrival
+        FROM reports
+        WHERE locality_id = ?
+        ORDER BY actual_arrival ASC
+    """, (locality_id,))
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    # At least two observations are required
+    if len(rows) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="Not enough historical data"
+        )
+
+    # Convert stored timestamps into datetime objects
+    arrivals = [
+        datetime.fromisoformat(row[0])
+        for row in rows
+    ]
+
+    # Calculate intervals between arrivals
+    intervals = []
+
+    for i in range(1, len(arrivals)):
+        difference = (
+            arrivals[i] - arrivals[i - 1]
+        ).total_seconds()
+
+        intervals.append(difference)
+
+    # Calculate average interval
+    average_seconds = sum(intervals) / len(intervals)
+
+    # Predict the next arrival
+    latest_arrival = arrivals[-1]
+
+    predicted_arrival = (
+        latest_arrival + timedelta(seconds=average_seconds)
+    )
+
+    return {
+        "locality_id": locality_id,
+        "observations": len(arrivals),
+        "average_interval_hours": average_seconds / 3600,
+        "latest_arrival": latest_arrival.isoformat(),
+        "predicted_next_arrival": predicted_arrival.isoformat(),
+        "prediction_type": "experimental",
+        "data_source": "simulated"
+    }
+
+
