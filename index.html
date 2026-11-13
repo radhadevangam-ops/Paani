@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f8fd">
+  <title>Paani | Water Supply Tracker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f8fd;
+      color: #172b4d;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .brand {
+      font-size: 30px;
+      font-weight: bold;
+      color: #1264d8;
+    }
+
+    .tagline, .muted {
+      color: #718096;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .status {
+      background: #e6f7ee;
+      color: #16834c;
+      padding: 9px 13px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    h1 {
+      font-size: 25px;
+      margin-bottom: 8px;
+    }
+
+    .intro {
+      color: #718096;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e6edf7;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 20px rgba(30,70,120,.04);
+    }
+
+    .label {
+      color: #718096;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .locality {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .prediction {
+      background: linear-gradient(135deg, #1264d8, #3489ef);
+      color: white;
+      border: none;
+    }
+
+    .prediction .label {
+      color: #dceaff;
+    }
+
+    .prediction h2 {
+      font-size: 29px;
+      margin: 14px 0 5px;
+    }
+
+    .time {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .note {
+      color: #e0edff;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 18px;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 26px 0 14px;
+    }
+
+    .report {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-bottom: 1px solid #edf1f7;
+      font-size: 14px;
+    }
+
+    .report:last-child {
+      border-bottom: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background: #1264d8;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button.secondary {
+      background: white;
+      color: #1264d8;
+      border: 1px solid #cfe0f7;
+    }
+
+    footer {
+      text-align: center;
+      color: #8a98aa;
+      font-size: 12px;
+      padding: 25px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <header>
+      <div>
+        <div class="brand">paani.</div>
+        <div class="tagline">
+          Your water supply, made predictable.
+        </div>
+      </div>
+      <div class="status">● Prototype</div>
+    </header>
+
+    <section>
+      <h1>Water supply overview</h1>
+      <p class="intro">
+        Monitor arrivals and estimated supply times.
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="label">SELECTED LOCALITY</div>
+      <div class="locality">Madhapur</div>
+      <p class="muted">Demonstration locality</p>
+    </section>
+
+    <section class="card prediction">
+      <div class="label">ESTIMATED NEXT WATER ARRIVAL</div>
+      <h2>November 15, 2026</h2>
+      <div class="time">6:30 AM</div>
+      <p class="note">
+        Experimental prediction based on five simulated
+        observations. Reliability: Low.
+      </p>
+    </section>
+
+    <h3>Recent water supply reports</h3>
+
+    <section class="card">
+      <div class="report">
+        <div>
+          <strong>November 13, 2026</strong>
+          <p class="muted">6:30 AM · 120 minutes</p>
+        </div>
+        <span>Sample</span>
+      </div>
+
+      <div class="report">
+        <div>
+          <strong>November 11, 2026</strong>
+          <p class="muted">6:30 AM · 120 minutes</p>
+        </div>
+        <span>Sample</span>
+      </div>
+
+      <div class="report">
+        <div>
+          <strong>November 9, 2026</strong>
+          <p class="muted">6:30 AM · 120 minutes</p>
+        </div>
+        <span>Sample</span>
+      </div>
+    </section>
+
+    <h3>Contribute a report</h3>
+
+    <section class="card">
+      <p class="muted">
+        Report when water actually arrives in your locality.
+      </p>
+
+      <button onclick="alert('Report submission will be connected to the API soon.')">
+        + Report water arrival
+      </button>
+
+      <button class="secondary"
+        onclick="alert('Locality selection will be added soon.')">
+        Change locality
+      </button>
+    </section>
+
+    <footer>
+      Paani · Water supply monitoring and prediction
+    </footer>
+
+  </main>
+</body>
+</html>
