@@ -1,0 +1,221 @@
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --blue: #1769e0;
+    --dark-blue: #104da8;
+    --light-blue: #edf5ff;
+    --background: #f7faff;
+    --text: #172b4d;
+    --muted: #718096;
+    --white: #ffffff;
+    --border: #e4ebf5;
+    --green: #16865c;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+button, select, input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.container {
+    width: min(1100px, 92%);
+    margin: 0 auto;
+}
+
+header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+}
+
+.navbar {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.logo {
+    color: var(--blue);
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.nav-label {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+main {
+    padding: 42px 0 60px;
+}
+
+.hero {
+    margin-bottom: 28px;
+}
+
+.hero h1 {
+    font-size: clamp(28px, 5vw, 40px);
+    letter-spacing: -1.5px;
+    margin-bottom: 8px;
+}
+
+.hero p {
+    color: var(--muted);
+}
+
+.panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 5px 20px rgba(25, 55, 100, 0.04);
+}
+
+.panel h2 {
+    font-size: 19px;
+    margin-bottom: 16px;
+}
+
+.locality-select {
+    width: 100%;
+    max-width: 360px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    color: var(--text);
+}
+
+.prediction {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.prediction-item {
+    background: var(--light-blue);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.prediction-item span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.prediction-item strong {
+    font-size: clamp(20px, 4vw, 27px);
+    color: var(--blue);
+}
+
+.status {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 6px 12px;
+    border-radius: 30px;
+    background: #fff4d8;
+    color: #946200;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.report-form {
+    display: grid;
+    gap: 14px;
+    max-width: 500px;
+}
+
+.report-form label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.report-form input,
+.report-form select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--white);
+}
+
+.primary-button {
+    background: var(--blue);
+    color: var(--white);
+    border: 0;
+    border-radius: 10px;
+    padding: 13px 18px;
+    font-weight: 700;
+}
+
+.primary-button:hover {
+    background: var(--dark-blue);
+}
+
+.report-list {
+    display: grid;
+    gap: 12px;
+}
+
+.report {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.report:last-child {
+    border-bottom: 0;
+}
+
+.report small {
+    color: var(--muted);
+}
+
+footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 25px 0;
+}
+
+@media (max-width: 600px) {
+    main {
+        padding-top: 28px;
+    }
+
+    .panel {
+        padding: 18px;
+    }
+
+    .prediction {
+        grid-template-columns: 1fr;
+    }
+
+    .report {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
