@@ -2,99 +2,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f5f8fd">
-  <title>Paani | Water Supply Tracker</title>
-
- <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f7faff">
+    <title>Paani | Water Supply Tracker</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <main class="container">
-
     <header>
-      <div>
-        <div class="brand">paani.</div>
-        <div class="tagline">
-          Your water supply, made predictable.
-        </div>
-      </div>
-      <div class="status">● Prototype</div>
+        <nav class="navbar container">
+            <div class="logo">paani.</div>
+            <div class="nav-label">Water Supply Tracker</div>
+        </nav>
     </header>
 
-    <section>
-      <h1>Water supply overview</h1>
-      <p class="intro">
-        Monitor arrivals and estimated supply times.
-      </p>
-    </section>
+    <main class="container">
 
-    <section class="card">
-      <div class="label">SELECTED LOCALITY</div>
-      <div class="locality">Madhapur</div>
-      <p class="muted">Demonstration locality</p>
-    </section>
+        <section class="hero">
+            <h1>Water supply overview</h1>
+            <p>Monitor arrivals and estimated supply times.</p>
+        </section>
 
-    <section class="card prediction">
-      <div class="label">ESTIMATED NEXT WATER ARRIVAL</div>
-      <h2>November 15, 2026</h2>
-      <div class="time">6:30 AM</div>
-      <p class="note">
-        Experimental prediction based on five simulated
-        observations. Reliability: Low.
-      </p>
-    </section>
+        <section class="panel">
+            <h2>Select your locality</h2>
+            <label for="locality-select">Locality</label>
+            <select id="locality-select" class="locality-select">
+                <option value="">Loading localities...</option>
+            </select>
+        </section>
 
-    <h3>Recent water supply reports</h3>
+        <section class="panel">
+            <h2>Estimated next water arrival</h2>
 
-    <section class="card">
-      <div class="report">
-        <div>
-          <strong>November 13, 2026</strong>
-          <p class="muted">6:30 AM · 120 minutes</p>
-        </div>
-        <span>Sample</span>
-      </div>
+            <div id="prediction" class="prediction">
+                <div class="prediction-item">
+                    <span>Prediction status</span>
+                    <strong>Waiting for data</strong>
+                </div>
+            </div>
 
-      <div class="report">
-        <div>
-          <strong>November 11, 2026</strong>
-          <p class="muted">6:30 AM · 120 minutes</p>
-        </div>
-        <span>Sample</span>
-      </div>
+            <div class="status">Experimental prediction</div>
+        </section>
 
-      <div class="report">
-        <div>
-          <strong>November 9, 2026</strong>
-          <p class="muted">6:30 AM · 120 minutes</p>
-        </div>
-        <span>Sample</span>
-      </div>
-    </section>
+        <section class="panel">
+            <h2>Recent water supply reports</h2>
+            <div id="reports" class="report-list">
+                <p>Reports will appear here.</p>
+            </div>
+        </section>
 
-    <h3>Contribute a report</h3>
+        <section class="panel">
+            <h2>Contribute a report</h2>
+            <p>Report when water actually arrives in your locality.</p>
 
-    <section class="card">
-      <p class="muted">
-        Report when water actually arrives in your locality.
-      </p>
+            <form id="report-form" class="report-form">
 
-      <button onclick="alert('Report submission will be connected to the API soon.')">
-        + Report water arrival
-      </button>
+                <div>
+                    <label for="arrival-time">Actual arrival date and time</label>
+                    <input
+                        type="datetime-local"
+                        id="arrival-time"
+                        required
+                    >
+                </div>
 
-      <button class="secondary"
-        onclick="alert('Locality selection will be added soon.')">
-        Change locality
-      </button>
-    </section>
+                <div>
+                    <label for="duration">Supply duration (minutes)</label>
+                    <input
+                        type="number"
+                        id="duration"
+                        min="1"
+                        required
+                        placeholder="Example: 120"
+                    >
+                </div>
 
-    <footer>
-      Paani · Water supply monitoring and prediction
-    </footer>
+                <button type="submit" class="primary-button">
+                    Submit water arrival report
+                </button>
 
-  </main>
+            </form>
+        </section>
+
+        <footer>
+            Paani · Water supply monitoring and prediction
+        </footer>
+
+    </main>
 </body>
 </html>
